@@ -1,12 +1,14 @@
-FROM frolvlad/alpine-glibc
+FROM debian:10-slim
 
-ENV ARDUINO_IDE_VERSION 1.8.3
+WORKDIR /opt/arduino
 
-RUN apk --no-cache add wget ca-certificates && \
-    mkdir /opt && \
-    wget -q -O- https://downloads.arduino.cc/arduino-${ARDUINO_IDE_VERSION}-linux64.tar.xz | tar xJ -C /opt && \
-    ln -s /opt/arduino-${ARDUINO_IDE_VERSION}/arduino /usr/local/bin/ && \
-    ln -s /opt/arduino-${ARDUINO_IDE_VERSION}/arduino-builder /usr/local/bin/ && \
-    ln -s /opt/arduino-${ARDUINO_IDE_VERSION} /opt/arduino
+COPY ./arduino-cli.yaml /opt/arduino/arduino-cli.yaml
 
-ENTRYPOINT [ "arduino-builder" ]
+RUN apt update && apt install -y curl python python-pip && \
+    pip install Pyserial && \
+    curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh && \
+    ln -s /opt/arduino/bin/arduino-cli /usr/local/bin/ && \
+    arduino-cli core update-index --config-file /opt/arduino/arduino-cli.yaml && \
+    arduino-cli core install arduino:avr esp32:esp32 attiny:avr
+
+ENTRYPOINT [ "arduino-cli" ]
